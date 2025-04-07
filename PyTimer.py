@@ -81,16 +81,29 @@ class MainWindow(QMainWindow):
         ]
         return _
     
-    # Create QHBoxLayout Objects List
+    # Create QHBoxLayout Objects List            
     def addMainContents(self):
+        global StartTimer
         # Create objects of QHBoxLayout and return a list of them
         TimerLayouts = []
         for each in self.scanForTimers():
+            # Create new Instances
             timer: QHBoxLayout = QHBoxLayout()
-            for Element in [QLabel(f'{each["Name"]}: {each["Seconds"]}s'),QPushButton('Start')]:
-                timer.addWidget(Element)
+            class button(QPushButton):
+                def __init__(self, seconds, parent=None):
+                    super(QPushButton, self).__init__(parent=parent)
+                    self.seconds = seconds
+                    self.text = "test" # Timers work but the button text doesnt
+                    self.clicked.connect(self.start)
+                def start(self):
+                    print("Start")
+                    time.sleep(self.seconds/100)
+                    print("Done")
+            # Add widgets
+            timer.addWidget(QLabel(f'{each["Name"]}: {each["Seconds"]}s'))
+            b: button = button(each["Seconds"])
+            timer.addWidget(b)
             TimerLayouts.append(timer)
-        # print(f"Objects are created:\n{TimerLayouts}")
         return TimerLayouts
 
 APP = QApplication([])
