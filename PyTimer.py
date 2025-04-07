@@ -83,7 +83,6 @@ class MainWindow(QMainWindow):
     
     # Create QHBoxLayout Objects List            
     def addMainContents(self):
-        global StartTimer
         # Create objects of QHBoxLayout and return a list of them
         TimerLayouts = []
         for each in self.scanForTimers():
