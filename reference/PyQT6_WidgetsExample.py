@@ -65,11 +65,6 @@ class WidgetGallery(QDialog):
         else:
             QApplication.setPalette(self.originalPalette)
 
-    def advanceProgressBar(self):
-        curVal = self.progressBar.value()
-        maxVal = self.progressBar.maximum()
-        self.progressBar.setValue(curVal + (maxVal - curVal) // 100)
-
     def createTopLeftGroupBox(self):
         self.topLeftGroupBox = QGroupBox("Group 1")
 
@@ -176,6 +171,11 @@ class WidgetGallery(QDialog):
         layout.addWidget(dial, 3, 1, 2, 1)
         layout.setRowStretch(5, 1)
         self.bottomRightGroupBox.setLayout(layout)
+
+    def advanceProgressBar(self):
+        curVal = self.progressBar.value()
+        maxVal = self.progressBar.maximum()
+        self.progressBar.setValue(curVal + (maxVal - curVal) // 100)
 
     def createProgressBar(self):
         self.progressBar = QProgressBar()

@@ -1,7 +1,8 @@
-from PyQt6.QtCore import QDateTime, Qt, QTimer, QSize
+from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtWidgets import *
 from xpfpath import *
-import json, os, time
+from pygame import mixer
+import json, os
 
 class MainWindow(QMainWindow):
     ## Define Main Window
@@ -10,22 +11,25 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PyTimer")
 
         # Define Containers
-        canvas = QWidget()            # Define Modifiable Space
-        self.setCentralWidget(canvas) # Set Modifiable Space in the Middle so we can see it
-        baseGrid = QGridLayout()      # Define Adressable Coordinates
-        topBarContent = QHBoxLayout() # Horizontal Layout
-        mainContent = QVBoxLayout()   # Vertical Layout
+        canvas = QWidget()              # Define Modifiable Space
+        self.setCentralWidget(canvas)   # Set Modifiable Space in the Middle so we can see it
+        baseGrid = QGridLayout()        # Define Adressable Coordinates
+        topBarContent = QHBoxLayout()   # Horizontal Layout
+        mainContent = QVBoxLayout()     # Vertical Layout
+        self.timerBarContent = QVBoxLayout() # Active Timers List
         
         # Define Contents
         canvas.setLayout(baseGrid)  # Add the Grid
-        topBarContent.addStretch(1) # Idk what it does yet but we'll see
+        topBarContent.addStretch() # Idk what it does yet but we'll see
         
         ## Define Grid Elements
         ## baseGrid.addLayout(Element, ROW, COL)
         #
         # Layout
-        baseGrid.addLayout(topBarContent,0,0) # Add the [Top Bar Contents] to r0,c0
-        baseGrid.addLayout(mainContent,1,0)   # Add the [Main Contents   ] to r1,c0
+        baseGrid.addLayout(topBarContent,0,0)   # Add the [Top Bar Contents] to r0,c0
+        baseGrid.addLayout(mainContent,1,0)     # Add the [Main Contents   ] to r1,c0
+        baseGrid.addLayout(self.timerBarContent,2,0) # Add Display for Current Active Timers
+        
         
         ## Add Widgets to Layouts
         #
@@ -35,28 +39,31 @@ class MainWindow(QMainWindow):
         # Main Contents
         for each in self.addMainContents():
             mainContent.addLayout(each)
-        # self.addMainContents()
 
     # Scan for Timers in a PATH
     def scanForTimers(self):
+        # Timer files
         TimersIndex = []
+        # Timer JSON data
         global TimerData
         TimerData = []
+        # path to timers folder
         path = xpfp('./timer_data')
+        # Verbose info
         print('Scanning for Timers...')
-        time.sleep(0.5)
         # Scan Folder for Timers
         try:
+            # scan path
             Files = os.scandir(path)
         except Exception as ERR:
+            # oops you have no timers
             print(f'You do not have any timers saved. [ {ERR} ]')
             os.mkdir('timer_data')
         # Scan Specifically for JSON files
         for Entry in Files:
             _ = str(Entry.name).split('.')
             TimersIndex.append(Entry.name) if _[-1] == "json" else print(f"{Entry} != *.json")
-            try: print(TimersIndex[-1])
-            except: pass
+        print(TimersIndex)
         # Load JSON
         # print(TimersIndex)
         for Files in TimersIndex:
@@ -75,35 +82,73 @@ class MainWindow(QMainWindow):
     ## Define Contents of Each Layout
     def addTopBarContents(self):
         # topBarContents.addWidget(Element, ROW, COL)
+        #
+        def createNewTimer():
+            print('New Button Pressed!')
+        NewButton = QPushButton("New")
+        NewButton.clicked.connect(createNewTimer) # 'print' is TEMPORARY
         _ = [
             QLabel("Create or Start Timer"),
-            QPushButton("New")
+            NewButton
         ]
         return _
     
     # Create QHBoxLayout Objects List            
     def addMainContents(self):
+        timerBarContent = self.timerBarContent
         # Create objects of QHBoxLayout and return a list of them
         TimerLayouts = []
+        # Create a button which stores data about the timer
+        class TimerButtonStart(QPushButton):
+            def __init__(self, *Data):
+                super().__init__()
+                self.setText("Start") # Set label of the button, same as 'Button = QPushButton("Start")'
+                # Store data about the timer inside this button
+                self.name = Data[0]
+                self.seconds = Data[1]
+                # Connect itself to a method which gets called when clicked
+                self.clicked.connect(self.createProgressBar)
+
+            ### <--- ### == Sections which needs to be re-written later
+            ### I will have to somehow make this instanced so that i can create as much timers as i want/stop each timer instance
+            def advanceProgressBar(self):
+                curVal = self.progressBar.value()
+                maxVal = self.progressBar.maximum()
+                self.progressBar.setValue(curVal+1)
+                if curVal == maxVal:
+                    print(f"Finished Timer: {self.name}")
+                    self.progressBar.close()
+                    self.timerStart.stop()
+            ###
+            # Create the Progress Bar and show it
+            def createProgressBar(self):
+                try:
+                    timerBarContent.removeWidget(self.progressBar)
+                    self.timerStart.stop()
+                    print(f"Stopping Timer: {self.name}")
+                except:pass
+                print(f"Starting Timer: {self.name}")
+                # create a for loop to create timers and get timer ID or create another class which holds the timer
+                # To be decided!
+                self.timerStart = QTimer(self)
+                self.timerStart.timeout.connect(self.advanceProgressBar)
+                self.progressBar = QProgressBar()
+                self.progressBar.setFormat(f"{self.name}: %p%")
+                timerBarContent.addWidget(self.progressBar)
+                self.progressBar.setRange(0, self.seconds)
+                self.progressBar.setValue(0)
+
+                self.timerStart.start(1000)
+                self.progressBar.show()
+        # Create List of Layouts containing TimerLabel and TimerStartButton
         for each in self.scanForTimers():
             # Create new Instances
             timer: QHBoxLayout = QHBoxLayout()
-            class button(QPushButton):
-                def __init__(self, seconds, parent=None):
-                    super(QPushButton, self).__init__(parent=parent)
-                    self.seconds = seconds
-                    self.text = "test" # Timers work but the button text doesnt
-                    self.clicked.connect(self.start)
-                def start(self):
-                    print("Start")
-                    time.sleep(self.seconds/100)
-                    print("Done")
-            # Add widgets
-            timer.addWidget(QLabel(f'{each["Name"]}: {each["Seconds"]}s'))
-            b: button = button(each["Seconds"])
-            timer.addWidget(b)
+            timer.addWidget(QLabel(f'{each["Name"]}: {each["Seconds"]}s'))  
+            timer.addWidget(TimerButtonStart(each["Name"],each["Seconds"])) # I can finally pass data over to the button
             TimerLayouts.append(timer)
         return TimerLayouts
+
 
 APP = QApplication([])
 
