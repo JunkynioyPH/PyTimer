@@ -111,6 +111,7 @@ class MainWindow(QMainWindow):
 
             ### <--- ### == Sections which needs to be re-written later
             ### I will have to somehow make this instanced so that i can create as much timers as i want/stop each timer instance
+            ### May need to slap this into a 'class className():'
             def advanceProgressBar(self):
                 curVal = self.progressBar.value()
                 maxVal = self.progressBar.maximum()
@@ -133,12 +134,12 @@ class MainWindow(QMainWindow):
                 self.timerStart = QTimer(self)
                 self.timerStart.timeout.connect(self.advanceProgressBar)
                 self.progressBar = QProgressBar()
-                self.progressBar.setFormat(f"{self.name}: %p%")
                 timerBarContent.addWidget(self.progressBar)
                 self.progressBar.setRange(0, self.seconds)
                 self.progressBar.setValue(0)
 
                 self.timerStart.start(1000)
+                self.progressBar.setFormat(f"{self.timerStart.timerId()}: {self.name}")
                 self.progressBar.show()
         # Create List of Layouts containing TimerLabel and TimerStartButton
         for each in self.scanForTimers():
