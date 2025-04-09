@@ -9,6 +9,19 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PyTimer")
+        self.setFixedWidth(350)
+        # self.setFixedSize(self.size())
+        # self.setMinimumHeight(200)
+        # windowGeometry = self.size()
+        
+        # Reset the Window's size after timer progress bar is removed
+        # Dynamically resize the window in a nutshell
+        windowReset = QTimer(self)
+        def windowGeo():
+            self.adjustSize()
+            self.resize(self.minimumSize())
+        windowReset.timeout.connect(windowGeo)
+        windowReset.start()
 
         # Define Containers
         canvas = QWidget()              # Define Modifiable Space
@@ -16,11 +29,15 @@ class MainWindow(QMainWindow):
         baseGrid = QGridLayout()        # Define Adressable Coordinates
         topBarContent = QHBoxLayout()   # Horizontal Layout
         mainContent = QVBoxLayout()     # Vertical Layout
+        mainContent.addSpacerItem(QSpacerItem(0,5)) # add gap between mainContent and topBar
         self.timerBarContent = QVBoxLayout() # Active Timers List
+        self.timerBarContent.addSpacerItem(QSpacerItem(0,5)) #add gap between mainContent and timerBarContent
+        
         
         # Define Contents
         canvas.setLayout(baseGrid)  # Add the Grid
-        topBarContent.addStretch() # Idk what it does yet but we'll see
+        # topBarContent.addStretch()
+        # topBarContent.setAlignment(Qt.AlignmentFlag.AlignLeft)
         
         ## Define Grid Elements
         ## baseGrid.addLayout(Element, ROW, COL)
@@ -50,7 +67,7 @@ class MainWindow(QMainWindow):
         # path to timers folder
         path = xpfp('./timer_data')
         # Verbose info
-        print('Scanning for Timers...')
+        print('\nScanning for Timers...')
         # Scan Folder for Timers
         try:
             # scan path
@@ -64,19 +81,12 @@ class MainWindow(QMainWindow):
             _ = str(Entry.name).split('.')
             TimersIndex.append(Entry.name) if _[-1] == "json" else print(f"{Entry} != *.json")
         print(TimersIndex)
-        # Load JSON
+        # Load JSON, and pass data over
         # print(TimersIndex)
         for Files in TimersIndex:
-            # Sound: SoundButton = SoundButton(f"{Files}")
-            # jsonData: dict = {}
             with open(xpfp(f"{path}/{Files}"),'r') as Data:
                 jsonData = json.loads(Data.read())
                 TimerData.append(jsonData)
-        # print(TimerData)
-                
-            # TimerData.append([f"{name}", timer])
-            # print([f"{y}", timer])
-            # time.sleep(0.0015625)
         return TimerData
     
     ## Define Contents of Each Layout
@@ -103,44 +113,57 @@ class MainWindow(QMainWindow):
             def __init__(self, *Data):
                 super().__init__()
                 self.setText("Start") # Set label of the button, same as 'Button = QPushButton("Start")'
+                self.timerData = Data
                 # Store data about the timer inside this button
+                # Connect itself to a method which gets called when clicked
+                self.clicked.connect(self.start)
+            def start(self):
+                timerProgress(self.timerData)
+        
+        # Create timer which is attached to the button's data
+        class timerProgress(QProgressBar):
+            def __init__(self, Data):
+                super().__init__()
+                # House Keeping
                 self.name = Data[0]
                 self.seconds = Data[1]
-                # Connect itself to a method which gets called when clicked
-                self.clicked.connect(self.createProgressBar)
-
-            ### <--- ### == Sections which needs to be re-written later
-            ### I will have to somehow make this instanced so that i can create as much timers as i want/stop each timer instance
-            ### May need to slap this into a 'class className():'
-            def advanceProgressBar(self):
-                curVal = self.progressBar.value()
-                maxVal = self.progressBar.maximum()
-                self.progressBar.setValue(curVal+1)
-                if curVal == maxVal:
-                    print(f"Finished Timer: {self.name}")
-                    self.progressBar.close()
-                    self.timerStart.stop()
-            ###
-            # Create the Progress Bar and show it
-            def createProgressBar(self):
-                try:
-                    timerBarContent.removeWidget(self.progressBar)
-                    self.timerStart.stop()
-                    print(f"Stopping Timer: {self.name}")
-                except:pass
-                print(f"Starting Timer: {self.name}")
-                # create a for loop to create timers and get timer ID or create another class which holds the timer
-                # To be decided!
-                self.timerStart = QTimer(self)
-                self.timerStart.timeout.connect(self.advanceProgressBar)
-                self.progressBar = QProgressBar()
-                timerBarContent.addWidget(self.progressBar)
-                self.progressBar.setRange(0, self.seconds)
-                self.progressBar.setValue(0)
-
-                self.timerStart.start(1000)
-                self.progressBar.setFormat(f"{self.timerStart.timerId()}: {self.name}")
-                self.progressBar.show()
+                print(f'Starting Timer: {self.name}_{self.seconds}s')
+                # set progressbar bounds
+                self.setRange(0, self.seconds)
+                self.setValue(0)
+                # create instance of timer
+                self.time = QTimer(self)
+                self.stopbutton = QPushButton("Stop")
+                self.stopbutton.clicked.connect(self.stopTimer)
+                # create container for timer progress and stop button for that timer
+                self.content = QHBoxLayout()
+                self.content.addWidget(self.stopbutton)
+                self.content.addWidget(self)
+                # @ timer timout, execute function
+                self.time.timeout.connect(self.startTimer)
+                # create progress bar in main window
+                timerBarContent.addLayout(self.content)
+                # Actually start timer
+                self.time.start(1000) # 1s
+                # Format Progress Bar Display
+                self.setFormat(f"{self.time.timerId()}: {self.name}")
+                
+            def startTimer(self):
+                # increment bar and stop when maxVal is reached
+                self.curVal = self.value()
+                self.maxVal = self.maximum()
+                self.setValue(self.curVal+1) #increment
+                # if maxVal is reached, or if timer isActive == False, delete relevant widgets
+                if self.curVal >= self.maxVal or self.time.isActive() == False:
+                    timerBarContent.removeWidget(self)
+                    timerBarContent.removeWidget(self.stopbutton)
+                    print(f"Finished Timer: {self.time.timerId()}-{self.name}") if self.time.timerId() != -1 else ''
+            def stopTimer(self):
+                    print(f"Stopped_ Timer: {self.time.timerId()}-{self.name}")
+                    self.time.stop()
+                    self.time.killTimer(self.time.timerId())
+                    self.startTimer()
+                
         # Create List of Layouts containing TimerLabel and TimerStartButton
         for each in self.scanForTimers():
             # Create new Instances
