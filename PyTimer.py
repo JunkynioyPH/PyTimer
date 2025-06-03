@@ -16,12 +16,15 @@ class MainWindow(QMainWindow):
         
         # Reset the Window's size after timer progress bar is removed
         # Dynamically resize the window in a nutshell
-        windowReset = QTimer(self)
-        def windowGeo():
-            self.adjustSize()
-            self.resize(self.minimumSize())
-        windowReset.timeout.connect(windowGeo)
-        windowReset.start()
+        
+        ## IT LITERALLY FROZE MY LINUX MINT DESKTOP SO I SHALL REFRAIN FROM
+        ## USING THIS METHOD OF STOPPING WINDOW RESIZE LMAOOOOOOOOO
+        # windowReset = QTimer(self)
+        # def windowGeo():
+        #     self.adjustSize()
+        #     self.resize(self.minimumSize())
+        # windowReset.timeout.connect(windowGeo)
+        # windowReset.start()
 
         # Define Containers
         canvas = QWidget()                                   # Define Modifiable Space
