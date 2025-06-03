@@ -24,14 +24,14 @@ class MainWindow(QMainWindow):
         windowReset.start()
 
         # Define Containers
-        canvas = QWidget()              # Define Modifiable Space
-        self.setCentralWidget(canvas)   # Set Modifiable Space in the Middle so we can see it
-        baseGrid = QGridLayout()        # Define Adressable Coordinates
-        topBarContent = QHBoxLayout()   # Horizontal Layout
-        mainContent = QVBoxLayout()     # Vertical Layout
-        mainContent.addSpacerItem(QSpacerItem(0,5)) # add gap between mainContent and topBar
-        self.timerBarContent = QVBoxLayout() # Active Timers List
-        self.timerBarContent.addSpacerItem(QSpacerItem(0,5)) #add gap between mainContent and timerBarContent
+        canvas = QWidget()                                   # Define Modifiable Space
+        self.setCentralWidget(canvas)                        # Set Modifiable Space in the Middle so we can see it
+        baseGrid = QGridLayout()                             # Define Adressable Coordinates
+        topBarContent = QHBoxLayout()                        # Horizontal Layout
+        mainContent = QVBoxLayout()                          # Vertical Layout
+        mainContent.addSpacerItem(QSpacerItem(0,5))          # Add gap between mainContent and topBar
+        self.timerBarContent = QVBoxLayout()                 # Active Timers List
+        self.timerBarContent.addSpacerItem(QSpacerItem(0,5)) # Add gap between mainContent and timerBarContent
         
         
         # Define Contents

@@ -12,3 +12,6 @@ useAutoPy2Exe.txt
 .venv
 /timer_data
 /pyqtdesigner
+build
+dist
+*.spec
